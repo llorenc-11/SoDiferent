@@ -1,0 +1,18 @@
+[project]
+name = "pypakiet"
+description = "My first package"
+version = "0.0.1"
+authors = [
+    { name="Romain Tyk", email="roman.tyk@buziaczek.pl" },
+]
+license = "GPL-3.0-or-later"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy>=2.0.0",
+]
+
+[build-system]
+requires = [
+    "numpy>=2.0.0",
+    "setuptools"
+]

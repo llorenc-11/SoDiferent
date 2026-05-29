@@ -1,0 +1,6 @@
+notatki.txt
+build
+.venv/
+.pytest_cache/
+*.egg-info/
+__pycache__/

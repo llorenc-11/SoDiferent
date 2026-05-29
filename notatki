@@ -1,0 +1,6 @@
+- numba aby generowac funkcje z python w c i potem uzyc w cpp
+
+- dodanie extra args do pythonowej funcji aby moc miec zmiene zmieniajace sie w czasie
+- dodanie wektoryzacji do funkcji w cpp aby moc rozwiazywac układy rownan 
+-sprobowac zeby nie przepisywalo tego na nowo do pythona tylko jakos podalo tamten i dodanie upewnienia ze dziala to tworzenie w miejscu 
+-sprawdzenie czy nie ma nieskonczonej petli jesli tolerance jest maly 
