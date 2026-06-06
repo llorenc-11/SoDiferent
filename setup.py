@@ -12,7 +12,6 @@ setuptools.setup(
         ("NDEBUG",1),
     ],
     ext_modules=[
-        setuptools.Extension("pypakiet.cfunkcje", sources=["src/cfunkcje.c"]),
         setuptools.Extension("pypakiet.Numeric", sources=["src/Numeric.cxx"],language="c++",extra_compile_args=["-std=c++17"],extra_link_args=["-lstdc++"]),
     ]
 )

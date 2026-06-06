@@ -1,6 +1,7 @@
-notatki.txt
 build
+notatki
 .venv/
 .pytest_cache/
 *.egg-info/
 __pycache__/
+docs
