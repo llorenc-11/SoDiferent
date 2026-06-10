@@ -69,7 +69,7 @@ def RungeKutta(function, t_min, t_max, initial_y, tolerance=1e-5, min_step=1e-4,
 
     Parameters
     ----------
-    function : callable, int, or numba.core.ccallback.CFunc
+    function : callable, int, or numba.CFunc
         The derivative function to evaluate the system. 
         - If a Python callable: Must have the signature `f(t, y)` or `f(t, y, params)`. 
         - If an `int`: Treated as a raw native OS memory pointer to pre-compiled C/C++ code.

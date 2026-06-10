@@ -30,6 +30,7 @@ self
 :maxdepth: 2
 :caption: User Guide:
 
+tutorial
 usage
 api
 ```

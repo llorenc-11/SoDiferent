@@ -6,6 +6,7 @@
 #include <array>
 #include <stdexcept>
 #include <cstring>
+#include <string>
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
