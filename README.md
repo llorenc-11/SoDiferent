@@ -12,7 +12,7 @@ SoDiferent helps with hurdles of complex numerical integration methods so you ca
 * **Automatic Compilation:** Using Numba, the package can automatically compile your Python functions directly into raw C-speed machine code before solving.
 
 ## Contributing
-quitefastmst is distributed under the open source GNU AGPL v3 license. Its source code can be downloaded from [Github](https://github.com/llorenc-11/SoDiferent)
+SoDiferent is distributed under the open source GNU AGPL v3 license. Its source code can be downloaded from [Github](https://github.com/llorenc-11/SoDiferent)
 **Author: ** Leonard Lorenc
 
 

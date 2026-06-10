@@ -4,4 +4,4 @@ notatki*
 .pytest_cache/
 *.egg-info/
 __pycache__/
-docs
+docs/build/
