@@ -2,7 +2,7 @@
 name = "SoDiferent"
 description = "Package implementing numerical solvers to ordinary differential equations."
 readme = "README.md"
-version = "0.0.1"
+version = "0.1.0"
 authors = [
     { name="Leonard Lorenc", email="leonard.lorenc.stud@pw.edu.pl" },
 ]
