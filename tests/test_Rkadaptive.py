@@ -25,7 +25,7 @@ def trig_deriv(t, y):
     return math.cos(t)
 
 
-def test_rk_adaptive_zero_span():
+def test_rk_adaptive_start_end():
     """Should return immediately if start and end times are identical"""
     res_y, res_t = sd.RungeKutta(decay_deriv, t_min=0.0, t_max=0.0, initial_y=5.0)
     assert len(res_t) == 1
