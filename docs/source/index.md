@@ -13,6 +13,7 @@ SoDiferent helps with hurdles of complex numerical integration methods so you ca
 
 ## Contributing
 SoDiferent is distributed under the open source GNU AGPL v3 license. Its source code can be downloaded from [Github](https://github.com/llorenc-11/SoDiferent)
+
 **Author:** Leonard Lorenc
 
 ## Dependencies

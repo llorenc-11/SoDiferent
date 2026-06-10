@@ -40,6 +40,12 @@ def harmonic_oscillator(t, y):
 res_y, res_t = RungeKutta( function=harmonic_oscillator, t_min=0.0, t_max=10.0, initial_y=np.array([1.0, 0.0]) )
 
 # res_y is a 2D array where column 0 is position and column 1 is velocity over time
+# array([[ 1.        ,  0.        ],
+#        [ 0.9681503 , -0.25036946],
+#        [ 0.87485026, -0.48439318],
+#        ...
+#        [-0.8889587 ,  0.45798502],
+#        [-0.7461909 ,  0.66573031]])
 ```
 
 ### 2. High-Speed Execution (C++ Compilation)
@@ -55,5 +61,13 @@ def predator_prey(t, y, params):
     d_predator = (delta * y[0] * y[1]) - (gamma * y[1])
     return [d_prey, d_predator]
 
-res_y, res_t = RungeKutta(function=predator_prey,t_min=0.0,t_max=50.0,initial_y=[10.0, 5.0],                 extra_parameters=(1.5, 0.1, 0.1, 1.5), compile_to_C=True)
+res_y, res_t = RungeKutta(function=predator_prey,t_min=0.0,t_max=50.0,initial_y=[10.0, 5.0], extra_parameters=(1.5, 0.1, 0.1, 1.5), compile_to_C=True)
+# res_y is a 2D array where column 0 is Prey population and column 1 is Predator population
+# array([[10.        ,  5.        ],
+#        [10.00100006,  4.99975003],
+#        [10.02497121,  4.99378634],
+#        ...
+#        [ 6.49630367,  6.93020426],
+#        [ 8.01847082,  5.7404328 ],
+#        [ 9.76126102,  5.06242972]])
 ```
