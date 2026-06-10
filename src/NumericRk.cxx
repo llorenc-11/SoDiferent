@@ -37,7 +37,7 @@ pair<vector<double>, vector<double>> Rk(const function <double(double,double)> &
     double order5;
     double error_est;
 
-    min_step = max(min_step,1e-14);
+    min_step = max(min_step,1e-6);
     tolerance = max(tolerance,1e-15);
 
     if (min_arg > max_arg) {
@@ -92,7 +92,8 @@ pair<vector<double>, vector<double>> Rk(const function <double(double,double)> &
         } 
     }
 
-    return result;
+    return result;  // modern compilers should use here named return value optimization, although older ones are not certain to do so,
+                    // it could be changed so the result is passed as reference to the function that would guarantee no copy on all compilers and systems 
 }
 
 
@@ -107,7 +108,7 @@ pair<vector<double>, vector<double>> RkVectorised(const function <vector<double>
     vector<double> order5(num_equations,0);
     vector<double> s(dim*num_equations,0);
 
-    min_step = max(min_step,1e-14);
+    min_step = max(min_step,1e-6);
     tolerance = max(tolerance,1e-15);
 
     if (min_arg > max_arg) {
@@ -201,126 +202,94 @@ pair<vector<double>, vector<double>> RkVectorised(const function <vector<double>
 
 
 
-const char* adaptiveRk_doc = R"doc(
-R"doc(
-adaptiveRk(function, x_min, x_max, initial_y, tolerance=1e-5, min_step=1e-4, extra_parameters=None)
 
-Solves an initial value problem for a system of ordinary differential equations (ODEs) 
-using the explicit Dormand-Prince (DP5(4)) adaptive Runge-Kutta method.
-
-Parameters
-----------
-function : callable
-    The derivative function to evaluate the system. Must have the signature 
-    `f(x, y, *extra_parameters)` and return the derivatives as a float or an array.
-x_min : float
-    The initial independent variable value (e.g., starting time).
-x_max : float
-    The final independent variable value for integration.
-initial_y : float or ndarray
-    The initial state of the system at `x_min`. If a float is provided, the solver 
-    treats the system as a 1D equation. If a NumPy array is provided, it is treated 
-    as a system of coupled ODEs.
-tolerance : float, optional
-    The maximum allowed local error per step. Controls the step-size adaptation. 
-    Default is 1e-5.
-min_step : float, optional
-    The minimum allowed absolute step size to prevent infinite loops in stiff 
-    regions. Default is 1e-4.
-extra_parameters : tuple, optional
-    A tuple of additional positional arguments to be passed to the derivative 
-    function.
-
-Returns
--------
-y_values : ndarray
-    The computed solution values at each time step. If `initial_y` was a scalar, 
-    this is a 1D array of shape `(n_steps,)`. If `initial_y` was an array of size N, 
-    this is a 2D matrix of shape `(n_steps, N)`.
-x_values : ndarray
-    A 1D array of shape `(n_steps,)` containing the corresponding integration steps 
-    where the solution was evaluated. The final value is guaranteed to reach at 
-    least `x_max`.
-
-Description
------------
-This solver utilizes a 5th-order Runge-Kutta method with a 4th-order error estimate 
-(DP5(4)). It dynamically adjusts the integration step size to maintain the 
-local truncation error below the specified `tolerance`. 
-
-)doc";
 
 static PyObject* py_rk(PyObject* self, PyObject* args, PyObject* kwargs) {
     PyObject* py_func;
     PyObject* py_y0; 
     PyObject* extra_parameters = NULL;
-    double x_min, x_max;
-    double tol = 1e-5;         
-    double min_step = 1e-4;
+    double t_min, t_max, tol, min_step;
     
     static char* kwlist[] = {
         (char*)"function", 
-        (char*)"x_min", 
-        (char*)"x_max", 
+        (char*)"t_min", 
+        (char*)"t_max", 
         (char*)"initial_y", 
         (char*)"tolerance",
         (char*)"min_step",
         (char*)"extra_parameters",
-        NULL
-    };
+        NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OddO|ddO", kwlist, 
-                                     &py_func, &x_min, &x_max, &py_y0, &tol, &min_step, &extra_parameters)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OddOddO", kwlist, 
+        &py_func, &t_min, &t_max, &py_y0, &tol, &min_step, &extra_parameters)){
         return NULL; 
     }
 
-    if (!PyCallable_Check(py_func)) {
-        PyErr_SetString(PyExc_TypeError, "Function argument must be a callable python object.");
-        return NULL;
+    if (extra_parameters == Py_None){
+        extra_parameters = NULL;
     }
 
-    if (extra_parameters && !PyTuple_Check(extra_parameters)) {
-        PyErr_SetString(PyExc_TypeError, "Argument extra_parameters must be a tuple.");
-        return NULL;
-    }
 
-    if (PyFloat_Check(py_y0) || PyLong_Check(py_y0)) {
+    if (PyFloat_Check(py_y0)){
         
         double y0 = PyFloat_AsDouble(py_y0);
+        function<double(double, double)> cpp_wrapper_func;
 
-        function<double(double, double)> cpp_wrapper_func = [py_func, extra_parameters](double x, double y) -> double {
-            Py_ssize_t extra_len;
-            if(extra_parameters){
-                extra_len = PyTuple_Size(extra_parameters);
-            }else{
-                extra_len =0;
+        if (PyLong_Check(py_func)) {
+            void* ptr_address = PyLong_AsVoidPtr(py_func);
+            typedef double (*ptrCFunc)(double, double,const double*);
+            ptrCFunc compiled_c_func = reinterpret_cast<ptrCFunc>(ptr_address);
+
+            vector<double> cpp_params;
+            if (extra_parameters){
+                Py_ssize_t plen = PyTuple_Size(extra_parameters);
+                for (Py_ssize_t i = 0; i < plen; ++i){
+                    cpp_params.push_back(PyFloat_AsDouble(PyTuple_GetItem(extra_parameters, i)));
+                }
             }
 
-            PyObject* paramlist = PyTuple_New(2 + extra_len);
+            cpp_wrapper_func = [compiled_c_func, cpp_params](double x, double y) -> double {
+                const double* temp;
+                if(cpp_params.empty()){
+                    temp = nullptr;
+                }else{
+                    temp = cpp_params.data();
+                }
+                return compiled_c_func(x, y, temp);
+            };
 
-            PyTuple_SetItem(paramlist, 0, PyFloat_FromDouble(x));
-            PyTuple_SetItem(paramlist, 1, PyFloat_FromDouble(y));
+        }else{
+            cpp_wrapper_func = [py_func, extra_parameters](double x, double y) -> double {
+                Py_ssize_t extra_len;
+                if(extra_parameters){
+                    extra_len = 1;
+                }else{
+                    extra_len =0;
+                }
+                PyObject* paramlist = PyTuple_New(2 + extra_len);
 
-            for (Py_ssize_t i = 0; i < extra_len; ++i) {
-                PyObject* item = PyTuple_GetItem(extra_parameters, i);
-                Py_INCREF(item); 
-                PyTuple_SetItem(paramlist, 2 + i, item);
-            }
-            
-            PyObject* py_result = PyObject_CallObject(py_func, paramlist);
-            Py_DECREF(paramlist); 
+                PyTuple_SetItem(paramlist, 0, PyFloat_FromDouble(x));
+                PyTuple_SetItem(paramlist, 1, PyFloat_FromDouble(y));
+                if(extra_parameters){
+                    Py_INCREF(extra_parameters);
+                    PyTuple_SetItem(paramlist,2,extra_parameters);
+                }
+                
+                PyObject* py_result = PyObject_CallObject(py_func, paramlist);
+                Py_DECREF(paramlist); 
 
-            if(!py_result) throw runtime_error("Python function failed.");
+                if(!py_result) throw runtime_error("Python function failed.");
 
-            double c_result = PyFloat_AsDouble(py_result);
-            Py_DECREF(py_result); 
-            return c_result;
-        };
+                double c_result = PyFloat_AsDouble(py_result);
+                Py_DECREF(py_result); 
+                return c_result;
+            };
+        }
 
         pair<vector<double>, vector<double>> result;
-        try {
-            result = Rk(cpp_wrapper_func, x_min, x_max, y0, tol, min_step);
-        } catch(const runtime_error& e) {
+        try{
+            result = Rk(cpp_wrapper_func, t_min, t_max, y0, tol, min_step);
+        }catch(const runtime_error& e) {
             if (!PyErr_Occurred()) PyErr_SetString(PyExc_RuntimeError, e.what());
             return NULL;
         }
@@ -337,9 +306,9 @@ static PyObject* py_rk(PyObject* self, PyObject* args, PyObject* kwargs) {
         memcpy(PyArray_DATA((PyArrayObject*)py_x_array), result.second.data(), size_result * sizeof(double));
 
         return Py_BuildValue("(NN)", py_y_array, py_x_array);
-    }
-    else if (PyArray_Check(py_y0)) {
-        
+
+    }else{
+
         PyArrayObject* vector_y0 = (PyArrayObject*)PyArray_FROM_OTF(py_y0, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY);
         if (!vector_y0) return NULL;
         
@@ -348,58 +317,84 @@ static PyObject* py_rk(PyObject* self, PyObject* args, PyObject* kwargs) {
         vector<double> y0_vec(y0_data, y0_data + num_equations);
         Py_DECREF(vector_y0);
 
-        function<vector<double>(double, const vector<double>&)> cpp_vec_func_wrapper = 
-        [py_func, extra_parameters, num_equations](double x, const vector<double>& y) -> vector<double> {
-            
-            Py_ssize_t extra_len;
-            if(extra_parameters){
-                extra_len = PyTuple_Size(extra_parameters);
-            }else{
-                extra_len =0;
-            }
-            PyObject* paramlist = PyTuple_New(2 + extra_len);
+        function<vector<double>(double, const vector<double>&)> cpp_vec_func_wrapper;
 
-            PyTuple_SetItem(paramlist, 0, PyFloat_FromDouble(x));
-            Py_ssize_t dims[1] = { num_equations };
-            PyObject* temp_y_array = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
-            memcpy(PyArray_DATA((PyArrayObject*)temp_y_array), y.data(), num_equations * sizeof(double));
+        if (PyLong_Check(py_func)) {
+            void* ptr_address = PyLong_AsVoidPtr(py_func);
+            typedef void (*ptrCVectorFunc)(double, const double*, double*, const double*);
+            ptrCVectorFunc compiled_c_func = reinterpret_cast<ptrCVectorFunc>(ptr_address);
 
-            PyTuple_SetItem(paramlist, 1, temp_y_array); 
-
-            for (Py_ssize_t i = 0; i < extra_len; ++i) {
-                PyObject* item = PyTuple_GetItem(extra_parameters, i);
-                Py_INCREF(item); 
-                PyTuple_SetItem(paramlist, 2 + i, item);
-            }
-            
-            PyObject* py_result = PyObject_CallObject(py_func, paramlist);
-            Py_DECREF(paramlist); 
-
-            if(!py_result) throw runtime_error("Python function failed.");
-
-            PyArrayObject* res_arr = (PyArrayObject*)PyArray_FROM_OTF(py_result, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY);
-            if (!res_arr) {
-                Py_DECREF(py_result);
-                throw runtime_error("Function must return a numpy array or list of floats.");
+            vector<double> cpp_params;
+            if (extra_parameters) {
+                Py_ssize_t plen = PyTuple_Size(extra_parameters);
+                for (Py_ssize_t i = 0; i < plen; ++i) {
+                    cpp_params.push_back(PyFloat_AsDouble(PyTuple_GetItem(extra_parameters, i)));
+                }
             }
 
-            if (PyArray_SIZE(res_arr) != num_equations) {
+            cpp_vec_func_wrapper = [compiled_c_func, num_equations, cpp_params](double x, const vector<double>& y) -> vector<double> {
+                vector<double> out_slope(num_equations); 
+                const double* temp;
+                if(cpp_params.empty()){
+                    temp = nullptr;
+                }else{
+                    temp = cpp_params.data();
+                }
+                compiled_c_func(x, y.data(), out_slope.data(), temp);
+                return out_slope;
+            };
+        } else {
+
+            cpp_vec_func_wrapper = [py_func, extra_parameters, num_equations](double x, const vector<double>& y) -> vector<double> {
+                
+                Py_ssize_t extra_len;
+                if(extra_parameters){
+                    extra_len = 1;
+                }else{
+                    extra_len =0;
+                }
+                PyObject* paramlist = PyTuple_New(2 + extra_len);
+
+                PyTuple_SetItem(paramlist, 0, PyFloat_FromDouble(x));
+                
+                Py_ssize_t dims[1] = { num_equations };
+                PyObject* temp_y_array = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, (void*)y.data());
+                PyTuple_SetItem(paramlist, 1, temp_y_array); 
+
+                if(extra_parameters){
+                    Py_INCREF(extra_parameters);
+                    PyTuple_SetItem(paramlist,2,extra_parameters);
+                }
+                
+                PyObject* py_result = PyObject_CallObject(py_func, paramlist);
+                Py_DECREF(paramlist); 
+
+                if(!py_result) throw runtime_error("Python function failed.");
+
+                PyArrayObject* res_arr = (PyArrayObject*)PyArray_FROM_OTF(py_result, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY);
+                if (!res_arr) {
+                    Py_DECREF(py_result);
+                    throw runtime_error("Function must return a numpy array or list of floats.");
+                }
+
+                if (PyArray_SIZE(res_arr) != num_equations) {
+                    Py_DECREF(res_arr);
+                    Py_DECREF(py_result);
+                    throw runtime_error("Python function returned an object of wrong size.Expected size: " + to_string(num_equations) + ".");
+                }
+                
+                double* res_data = (double*)PyArray_DATA(res_arr);
+                vector<double> c_result(res_data, res_data + num_equations);
+                
                 Py_DECREF(res_arr);
                 Py_DECREF(py_result);
-                throw runtime_error("Python function returned an incorrect number of slopes. Expected exactly " + to_string(num_equations) + ".");
-            }
-            
-            double* res_data = (double*)PyArray_DATA(res_arr);
-            vector<double> c_result(res_data, res_data + num_equations);
-            
-            Py_DECREF(res_arr);
-            Py_DECREF(py_result);
-            return c_result;
-        };
+                return c_result;
+            };
+        }
 
         pair<vector<double>, vector<double>> result;
         try {
-            result = RkVectorised(cpp_vec_func_wrapper, x_min, x_max, y0_vec, tol, min_step);
+            result = RkVectorised(cpp_vec_func_wrapper, t_min, t_max, y0_vec, tol, min_step);
         } catch(const runtime_error& e) {
             if (!PyErr_Occurred()) PyErr_SetString(PyExc_RuntimeError, e.what());
             return NULL;
@@ -419,11 +414,6 @@ static PyObject* py_rk(PyObject* self, PyObject* args, PyObject* kwargs) {
 
         return Py_BuildValue("(NN)", py_y_array, py_x_array);
     } 
-    
-    else {
-        PyErr_SetString(PyExc_TypeError, "initial_y must be a float or a numpy array.");
-        return NULL;
-    }
 }
 
 
@@ -431,21 +421,21 @@ static PyObject* py_rk(PyObject* self, PyObject* args, PyObject* kwargs) {
 
 
 static PyMethodDef my_methods[] = {
-    {"adaptiveRk", (PyCFunction)py_rk, METH_VARARGS | METH_KEYWORDS, adaptiveRk_doc},
+    {"adaptiveRk", (PyCFunction)py_rk, METH_VARARGS | METH_KEYWORDS, "Solves an initial value problem for a system of ordinary differential equations using the explicit Dormand-Prince from adaptive Runge-Kutta methods family."},
     {NULL, NULL, 0, NULL}
 };
 
 static struct PyModuleDef my_module = {
     PyModuleDef_HEAD_INIT,
-    "Numeric",
-    "Module implementing numeric solvers for ordinary/partial differential equations",
+    "NumericRk",
+    "Module implementing numeric Runga-Kutta solvers for ordinary/partial differential equations",
     -1,
     my_methods
 };
 
 extern "C" {
 
-PyMODINIT_FUNC PyInit_Numeric()
+PyMODINIT_FUNC PyInit_NumericRk()
 {
     PyObject* m = PyModule_Create(&my_module);
     if (!m) return NULL;

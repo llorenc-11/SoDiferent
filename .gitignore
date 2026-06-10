@@ -1,5 +1,5 @@
 build
-notatki
+notatki*
 .venv/
 .pytest_cache/
 *.egg-info/
