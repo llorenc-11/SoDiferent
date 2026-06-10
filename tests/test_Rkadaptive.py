@@ -5,7 +5,7 @@ import warnings
 import numpy as np
 import pandas as pd 
 
-from pypakiet import RungaKutta
+import SoDiferent as sd
 
 NUM_RANDOM_RUNS = 20
 
@@ -27,12 +27,12 @@ def trig_deriv(t, y):
 
 def test_rk_adaptive_zero_span():
     """Should return immediately if start and end times are identical"""
-    res_y, res_t = RungaKutta(decay_deriv, t_min=0.0, t_max=0.0, initial_y=5.0)
+    res_y, res_t = sd.RungeKutta(decay_deriv, t_min=0.0, t_max=0.0, initial_y=5.0)
     assert len(res_t) == 1
 
 def test_rk_adaptive_low_tolerance():
     """If the tolerance is very low, the minimal step value should take over and the loop shouldn't go on forever"""
-    res_y, res_t = RungaKutta(decay_deriv, t_min=0.0, t_max=50.0, initial_y=0.0, tolerance=1e-15) 
+    res_y, res_t = sd.RungeKutta(decay_deriv, t_min=0.0, t_max=50.0, initial_y=0.0, tolerance=1e-15) 
     assert len(res_t) > 0
 
 def test_rk_adaptive_constant_derivative():
@@ -40,7 +40,7 @@ def test_rk_adaptive_constant_derivative():
     def zero_deriv(t, y):
         return 0.0
 
-    res_y, res_t = RungaKutta(zero_deriv, t_min=0.0, t_max=100.0, initial_y=42.0, tolerance=1e-2)
+    res_y, res_t = sd.RungeKutta(zero_deriv, t_min=0.0, t_max=100.0, initial_y=42.0, tolerance=1e-2)
     assert all(y == 42.0 for y in res_y)
     assert len(res_t) < 10
 
@@ -52,7 +52,7 @@ def test_rk_adaptive_decay_random(execution_number):
     t_end = random.uniform(15, 115)
     y0 = random.uniform(0, 5)
 
-    res_y, res_t = RungaKutta(decay_deriv, t_min=t0, t_max=t_end, initial_y=y0, tolerance=1e-8)
+    res_y, res_t = sd.RungeKutta(decay_deriv, t_min=t0, t_max=t_end, initial_y=y0, tolerance=1e-8)
 
     assert len(res_y) > 0
     assert res_t[-1] == pytest.approx(t_end, abs=1e-3)
@@ -67,7 +67,7 @@ def test_rk_adaptive_polynomial_random(execution_number):
     t_end = random.uniform(15, 30)
     y0 = random.uniform(-10, 10)
 
-    res_y, res_t = RungaKutta(poly_deriv, t_min=t0, t_max=t_end, initial_y=y0, tolerance=1e-8)
+    res_y, res_t = sd.RungeKutta(poly_deriv, t_min=t0, t_max=t_end, initial_y=y0, tolerance=1e-8)
     assert len(res_y) > 0
     assert res_t[-1] == pytest.approx(t_end, abs=1e-3)
 
@@ -95,7 +95,7 @@ def sys_harmonic_oscillator(t, y):
 def test_rk_vector_zero_witdh():
     """Should return immediately with a 2D array if start and end times are identical"""
     y0 = np.array([5.0, 3.0])
-    res_y, res_t = RungaKutta(sys_decay_deriv, t_min=0.0, t_max=0.0, initial_y=y0)
+    res_y, res_t = sd.RungeKutta(sys_decay_deriv, t_min=0.0, t_max=0.0, initial_y=y0)
     
     assert len(res_t) == 1
     assert res_y.shape == (1, 2) 
@@ -103,7 +103,7 @@ def test_rk_vector_zero_witdh():
 def test_rk_vector_constant_derivative():
     """If y' = 0 vector, y should remain exactly at the initial condition for all equations"""
     y0 = np.array([42.0, -7.0, 3.14])
-    res_y, res_t = RungaKutta(sys_zero_deriv, t_min=0.0, t_max=100.0, initial_y=y0, tolerance=1e-2)
+    res_y, res_t = sd.RungeKutta(sys_zero_deriv, t_min=0.0, t_max=100.0, initial_y=y0, tolerance=1e-2)
     
     assert res_y.shape[1] == 3
 
@@ -120,7 +120,7 @@ def test_array_like_structures_safely_parsed(initial_y_input):
     Check if the Python wrapper correctly catches all array-like structures and changes them corectly before they cross to C++ solver
     """
     # 1. Run the solver (using the slow path since compile_to_C=False by default)
-    res_y, res_t = RungaKutta(
+    res_y, res_t = sd.RungeKutta(
         function=sys_zero_deriv_v2, 
         t_min=0.0, 
         t_max=12.0, 
@@ -151,7 +151,7 @@ def test_rk_vector_harmonic_oscillator_random(execution_number):
     t_end = random.uniform(math.pi + 1, 5 * math.pi)
     y0 = np.array([random.uniform(-3, 3), random.uniform(-3, 3)])
 
-    res_y, res_t = RungaKutta(sys_harmonic_oscillator, t_min=t0, t_max=t_end, initial_y=y0, tolerance=1e-8)
+    res_y, res_t = sd.RungeKutta(sys_harmonic_oscillator, t_min=t0, t_max=t_end, initial_y=y0, tolerance=1e-8)
     
     assert len(res_y) > 0
     assert res_t[-1] == pytest.approx(t_end, abs=5e-3)
@@ -175,7 +175,7 @@ def test_fast_path_simple_parameters():
     y0 = 5.0
     custom_rate = 2.5
     
-    res_y, res_t = RungaKutta(
+    res_y, res_t = sd.RungeKutta(
         parameterized_decay, 
         t_min=0.0, 
         t_max=4.0, 
@@ -196,7 +196,7 @@ def test_slow_path_complex_parameters():
         return -config_dict["rate"] * y
 
     y0 = 5.0
-    res_y, res_t = RungaKutta(
+    res_y, res_t = sd.RungeKutta(
         dirty_decay, 
         t_min=0.0, 
         t_max=5.0, 
@@ -212,7 +212,7 @@ def test_slow_path_complex_parameters():
 def test_compile_mismatch_complex_params():
     """ Ensures the code catches users trying to pass lists/strings while simultaneously asking for C compilation """
     with pytest.raises(TypeError, match="You cannot use C-compiled function with complex extra_parameters"):
-        RungaKutta(
+        sd.RungeKutta(
             decay_deriv, 
             t_min=0.0, 
             t_max=1.0, 
@@ -224,7 +224,7 @@ def test_compile_mismatch_complex_params():
 def test_invalid_pointer_integer():
     """ Ensures that random, low-value integers are blocked from crossing into C++ to prevent a Segmentation Fault """
     with pytest.raises(ValueError, match="Invalid pointer"):
-        RungaKutta(
+        sd.RungeKutta(
             function=3, #Garbage 
             t_min=0.0, 
             t_max=1.0, 
@@ -238,7 +238,7 @@ def test_guard_numba_fallback_warning():
             return eval("1.0") * y
 
         with pytest.warns(RuntimeWarning, match="Numba C-compilation failed"):
-            res_y, res_t = RungaKutta(
+            res_y, res_t = sd.RungeKutta(
                 unsupported_math, 
                 t_min=0.0, 
                 t_max=2.0, 
@@ -251,6 +251,6 @@ def test_invalid_initial_y_matrix():
     """ Checks if initial_y is a 1D vector otherwise throws an error """
     bad_y0 = np.array([[1.0, 2.0], [3.0, 4.0]])
     with pytest.raises(ValueError, match="must be a 1D vector"):
-        RungaKutta(sys_decay_deriv, t_min=0.0, t_max=1.0, initial_y=bad_y0)
+        sd.RungeKutta(sys_decay_deriv, t_min=0.0, t_max=1.0, initial_y=bad_y0)
 
 

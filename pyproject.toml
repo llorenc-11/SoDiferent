@@ -1,14 +1,16 @@
 [project]
-name = "pypakiet"
-description = "My first package"
+name = "SoDiferent"
+description = "Package implementing numerical solvers to ordinary differential equations."
+readme = "README.md"
 version = "0.0.1"
 authors = [
-    { name="Romain Tyk", email="roman.tyk@buziaczek.pl" },
+    { name="Leonard Lorenc", email="leonard.lorenc.stud@pw.edu.pl" },
 ]
 license = "GPL-3.0-or-later"
 requires-python = ">=3.11"
 dependencies = [
   "numpy>=2.0.0",
+  "numba>=0.60.0"
 ]
 
 [build-system]

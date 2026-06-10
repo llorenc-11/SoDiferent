@@ -2,7 +2,7 @@ import numpy as np
 import warnings
 import numba as nb
 from numba import types, cfunc, carray
-import pypakiet.NumericRk as numeric
+import SoDiferent.NumericRk as numeric
 
 def _compile_scalar(user_func, num_params):
     """Compiles a scalar function for C++"""
@@ -51,10 +51,12 @@ def _compile_vectorized(user_func, num_equations, num_params):
         return c_wrapper
 
 
-def RungaKutta(function, t_min, t_max, initial_y, tolerance=1e-5, min_step=1e-4, extra_parameters=None,compile_to_C = False):
+def RungeKutta(function, t_min, t_max, initial_y, tolerance=1e-5, min_step=1e-4, extra_parameters=None,compile_to_C = False):
     """
     Solves an initial value problem for a system of ordinary differential equations (ODEs) 
     using the explicit Dormand-Prince method from the adaptive Runge-Kutta family.
+    This solver dynamically adjusts the step size to optimize computation time
+    while ensuring that the error at each step remains below the specified tolerance.
     
     The method accepts a Python function written by the user, which is then used by the 
     solver written in C++. This is handled in two ways:
