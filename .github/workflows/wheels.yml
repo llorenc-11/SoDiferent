@@ -30,8 +30,8 @@ jobs:
 
       - name: Build wheels
         env:
-          CIBW_SKIP: "cp36-* cp37-* cp38-* cp39-* pp* *-musllinux* *-win32 *-i686"
-          CIBW_ARCHS_LINUX: auto aarch64
+          CIBW_SKIP: "cp311-* cp312-* cp313-*"
+          CIBW_ARCHS_LINUX: auto
           CIBW_ARCHS_MACOS: x86_64 arm64
         run: python -m cibuildwheel --output-dir wheelhouse
 
