@@ -1,7 +1,7 @@
 
 # SoDiferent
 
-**A fast, C++ backed Ordinary Differential Equation (ODE) solver for Python.**
+**A fast,C++ backed Ordinary Differential Equation (ODE) solver for Python.**
 
 SoDiferent helps with hurdles of complex numerical integration methods so you can focus strictly on the mathematical details. Simply define your system of equations as a standard Python function, and the solver handles the rest.
 
@@ -9,11 +9,16 @@ SoDiferent helps with hurdles of complex numerical integration methods so you ca
 
 * **Flexibility of Python:** Write your equations in pure Python, just like you always do.
 * **C++ Backed:** The core mathematical solvers are written in C++ for maximum performance.
-* **Automatic Compilation:** Using Numba, the package can automatically compile your Python functions directly into raw C-speed machine code before solving.
+* **Automatic Compilation:** Using Numba, the package can automatically  compile your Python functions directly into raw C-speed machine code before solving.
 
 ## Contributing
 SoDiferent is distributed under the open source GNU AGPL v3 license. Its source code can be downloaded from [Github](https://github.com/llorenc-11/SoDiferent)
-**Author: ** Leonard Lorenc
+**Author:** Leonard Lorenc
+
+## Dependencies
+
+* **[NumPy](https://numpy.org/)** 
+* **[Numba](https://numba.pydata.org/)** 
 
 
 
@@ -30,7 +35,7 @@ self
 :maxdepth: 2
 :caption: User Guide:
 
-tutorial
+Tutorial <tutorial>
 usage
 api
 ```
