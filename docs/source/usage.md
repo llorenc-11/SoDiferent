@@ -36,7 +36,7 @@ def harmonic_oscillator(t, y):
     return [dy0, dy1]
 
 
-# We start at position = 1.0, velocity = 0.0
+# We start at position = 1.0, velocity = 0.0 
 res_y, res_t = RungeKutta( function=harmonic_oscillator, t_min=0.0, t_max=10.0, initial_y=np.array([1.0, 0.0]) )
 
 # res_y is a 2D array where column 0 is position and column 1 is velocity over time
