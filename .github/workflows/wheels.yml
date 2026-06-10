@@ -1,6 +1,8 @@
-name: sodiferentwheels
+name: Build C++ Wheels
 
 on:
+  push:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -8,6 +10,7 @@ jobs:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false    
       matrix:
         os: [ubuntu-latest, windows-latest, macos-13, macos-latest]
 
@@ -30,7 +33,7 @@ jobs:
 
       - name: Build wheels
         env:
-          CIBW_SKIP: "cp36-* cp37-* cp38-* cp39-* pp* *-musllinux*"
+          CIBW_SKIP: "cp36-* cp37-* cp38-* cp39-* pp* *-musllinux* *-win32 *-i686"
           CIBW_ARCHS_LINUX: auto aarch64
           CIBW_ARCHS_MACOS: x86_64 arm64
         run: python -m cibuildwheel --output-dir wheelhouse
