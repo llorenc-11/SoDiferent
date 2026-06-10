@@ -21,6 +21,8 @@ release = '0.0.1'
 extensions = ['sphinx.ext.autodoc',       
     'sphinx.ext.napoleon',      
     'myst_parser']
+    
+autodoc_mock_imports = ["SoDiferent.NumericRk"]
 
 templates_path = ['_templates']
 exclude_patterns = []
