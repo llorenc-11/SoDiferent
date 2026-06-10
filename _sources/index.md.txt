@@ -21,10 +21,15 @@ SoDiferent is distributed under the open source GNU AGPL v3 license. Its source 
 
 ```{toctree}
 :maxdepth: 2
-:caption: Contents:
+:caption: About:
 
 self
+```
 
-:caption User Guide:
+```{toctree}
+:maxdepth: 2
+:caption: User Guide:
+
 usage
 api
+```

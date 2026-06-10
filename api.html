@@ -172,7 +172,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
       </label>
     </div>
@@ -190,9 +190,12 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul class="current">
+  <p class="caption" role="heading"><span class="caption-text">About:</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="index.html">SoDiferent</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guide:</span></p>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="usage.html">How to guide</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Function Reference</a></li>
 </ul>
@@ -228,7 +231,7 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
           </label>
         </div>
@@ -236,6 +239,77 @@
           <section id="function-reference">
 <h1>Function Reference<a class="headerlink" href="#function-reference" title="Link to this heading">¶</a></h1>
 <p>This page contains the technical documentation for the solver parameters.</p>
+<dl class="py function" id="module-SoDiferent.ODEsolvers">
+<dt class="sig sig-object py" id="SoDiferent.ODEsolvers.RungeKutta">
+<span class="sig-prename descclassname"><span class="pre">SoDiferent.ODEsolvers.</span></span><span class="sig-name descname"><span class="pre">RungeKutta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">function</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compile_to_C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SoDiferent.ODEsolvers.RungeKutta" title="Link to this definition">¶</a></dt>
+<dd><p>Solves an initial value problem for a system of ordinary differential equations (ODEs)
+using the explicit Dormand-Prince method from the adaptive Runge-Kutta family.
+This solver dynamically adjusts the step size to optimize computation time
+while ensuring that the error at each step remains below the specified tolerance.</p>
+<p>The method accepts a Python function written by the user, which is then used by the
+solver written in C++. This is handled in two ways:</p>
+<ul class="simple">
+<li><p>Python path: The solver uses the Python C-API to issue a call to the user’s function.
+It is executed by Python, and the result is passed back to C++.</p></li>
+<li><p>Compiled path: If the user passes a function compiled by Numba, a raw C pointer, or
+if the <cite>compile_to_C</cite> flag is set to True, the solver calls the compiled C code
+directly. See the <cite>compile_to_C</cite> parameter description for more details.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>function</strong> (<em>callable</em><em>, </em><em>int</em><em>, or </em><em>numba.core.ccallback.CFunc</em>) – The derivative function to evaluate the system.
+- If a Python callable: Must have the signature <cite>f(t, y)</cite> or <cite>f(t, y, params)</cite>.
+- If an <cite>int</cite>: Treated as a raw native OS memory pointer to pre-compiled C/C++ code.
+- If a Numba <cite>cfunc</cite>: The compiled memory address will be extracted automatically.</p></li>
+<li><p><strong>t_min</strong> (<em>float</em>) – The initial value of the independent variable (the variable with respect to which
+the derivative is evaluated, for example: starting time).</p></li>
+<li><p><strong>t_max</strong> (<em>float</em>) – The final value of the independent variable for integration.(e.g. end time)</p></li>
+<li><p><strong>initial_y</strong> (<em>float</em><em> or </em><em>ndarray</em>) – The initial state of the system at <cite>t_min</cite>. If a float is provided, the solver
+treats the system as a 1D scalar equation. If a 1D NumPy array or array-like
+structure is provided, it is treated as a system of ODEs.</p></li>
+<li><p><strong>tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The maximum allowed local truncation error per step. Default is 1e-5.</p></li>
+<li><p><strong>min_step</strong> (<em>float</em><em>, </em><em>optional</em>) – The minimum allowed absolute step size to prevent infinite loops in extremely
+‘stiff’ regions. Default is 1e-4.</p></li>
+<li><p><strong>extra_parameters</strong> (<em>tuple</em><em>, </em><em>optional</em>) – A tuple of additional arguments to be passed to the derivative function.
+These arguments are passed as a single grouped parameter. For example, a signature
+like <cite>f(t, y, p1, p2, p3)</cite> is not allowed; it must be <cite>f(t, y, params)</cite>, where
+<cite>params</cite> is a tuple containing <cite>(p1, p2, p3)</cite>. If <cite>compile_to_C</cite> is set to True,
+the types inside this tuple must be simple, numerical types (easily convertible
+to float, e.g., int or bool).</p></li>
+<li><p><strong>compile_to_C</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, attempts to compile the Python <cite>function</cite> into C machine code using Numba.
+It first JIT-compiles the function (allowing features like NumPy arrays), and then
+compiles a C-wrapper that allows the C++ solver to execute it directly. If
+compilation fails due to Python features unsupported by C (e.g., dictionaries),
+it emits a RuntimeWarning and safely falls back to the standard Python execution
+engine. Default is False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>y_values</strong> (<em>ndarray</em>) – The computed solution values at each step (calculated by the solver at points
+between <cite>t_min</cite> and <cite>t_max</cite>). If <cite>initial_y</cite> was a scalar, this is a 1D array of
+shape <cite>(n_steps,)</cite>. If <cite>initial_y</cite> was an array-like structure of size N, this is a 2D matrix of
+shape <cite>(n_steps, N)</cite>, where the k-th column is the solution to the k-th equation.</p></li>
+<li><p><strong>x_values</strong> (<em>ndarray</em>) – A 1D array of shape <cite>(n_steps,)</cite> containing the corresponding integration steps
+where the solution was evaluated. The final value is guaranteed to reach at least
+<cite>t_max</cite>, but will not exceed it by more than <cite>min_step</cite>
+(i.e., <cite>x_values[-1] - t_max &lt; min_step</cite>).</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>TypeError</strong> – If <cite>function</cite> is not a callable Python object or valid pointer,if <cite>initial_y</cite>
+    is not numeric, or if complex <cite>extra_parameters</cite> are provided alongside
+    <cite>compile_to_C=True</cite>.</p></li>
+<li><p><strong>ValueError</strong> – If <cite>initial_y</cite> is an empty array, a multi-dimensional matrix, or if an invalid
+    integer pointer is passed.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
         </article>
@@ -273,8 +347,27 @@
         
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
+    <aside class="toc-drawer">
       
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Function Reference</a><ul>
+<li><a class="reference internal" href="#SoDiferent.ODEsolvers.RungeKutta"><code class="docutils literal notranslate"><span class="pre">RungeKutta()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
       
       
     </aside>
