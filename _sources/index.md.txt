@@ -24,3 +24,7 @@ SoDiferent is distributed under the open source GNU AGPL v3 license. Its source 
 :caption: Contents:
 
 self
+
+:caption User Guide:
+usage
+api
